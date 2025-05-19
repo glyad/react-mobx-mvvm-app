@@ -15,5 +15,6 @@ jobs:
         with:
           node-version: '20'
       - run: npm ci
+      - run: npx playwright install
       - run: npm run test -- --coverage
       - run: npm run test:e2e
