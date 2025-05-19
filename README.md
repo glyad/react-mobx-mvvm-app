@@ -22,9 +22,9 @@ npm run dev
 
 ## Stack
 
-- React 18
+- React 19
 - MobX 6
-- Vite 5
+- Vite 6
 - Vitest + Testing Library (unit/component tests)
 - Playwright (E2E)
 
