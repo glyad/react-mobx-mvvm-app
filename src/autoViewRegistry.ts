@@ -1,34 +1,72 @@
-// src/autoViewRegistry.ts
 import React from "react";
 
-// Find all ViewModels and Views
-const viewModelModules = import.meta.glob('./**/viewmodels/**/*ViewModel.ts', { eager: true });
-const viewModules = import.meta.glob('./**/views/**/*View.tsx', { eager: true });
+/**
+ * Registry shape:
+ *  Map<ViewModelCtor, Map<contextName, ViewComponent>>
+ *
+ *  The empty string ("") is reserved for the *default* (non-contextual) view.
+ */
+type ViewMap = Map<string, React.ComponentType<{ viewModel: unknown }>>;
+const registry = new Map<Function, ViewMap>();
 
-// Build registry: Map<VM constructor, View component>
-const registry = new Map<Function, React.ComponentType<{ viewModel: any }>>();
+// ❶  Grab every TSX file sitting somewhere under /views
+//     This includes default views (…View.tsx) *and* contextual ones
+//     (e.g. views/Counter/full.tsx).
+const viewModules = import.meta.glob("./**/views/**/*.tsx", { eager: true });
 
-// Helper: Get "Counter" from "CounterViewModel.ts"
-function baseName(filename: string, suffix: string) {
-  return filename.replace(/^.*\/|\..*$/g, '').replace(suffix, '');
+// ❷  Grab every ViewModel class so we know which base name we’re matching.
+const viewModelModules = import.meta.glob(
+  "./**/viewmodels/**/*ViewModel.ts",
+  { eager: true },
+);
+
+/**
+ * Utility: "src/viewmodels/CounterViewModel.ts"  →  "Counter"
+ *          "src/views/CounterView.tsx"          →  "Counter"
+ *          "src/views/Counter/full.tsx"         →  { base:"Counter", ctx:"full" }
+ */
+function parseViewPath(path: string): {
+  base: string;
+  context: string; // "" for default
+} {
+  // strip leading folders
+  const afterViews = path.split("/views/")[1]!;
+  // default view?
+  if (afterViews.endsWith("View.tsx")) {
+    return { base: afterViews.replace(/View\.tsx$/, ""), context: "" };
+  }
+
+  // contextual view: "<Base>/<ctx>.tsx"
+  const [base, file] = afterViews.split("/");
+  return { base, context: file.replace(/\.tsx$/, "") };
 }
 
-Object.entries(viewModelModules).forEach(([vmPath, vmModule]) => {
-  // Get the default or named export for the VM class
-  const vmClass = (<any>vmModule).default ?? Object.values(<any>vmModule)[0];
-  const vmName = baseName(vmPath, "ViewModel");
+function getExport(module: unknown) {
+  // allow both `export default` and `export class …`
+  return (module as any).default ?? Object.values(module as any)[0];
+}
 
-  // Find matching View
-  const viewEntry = Object.entries(viewModules).find(([viewPath, _]) =>
-    baseName(viewPath, "View") === vmName
-  );
-  if (viewEntry) {
-    const [_, viewModule] = viewEntry;
-    const viewComp = (<any>viewModule).default ?? Object.values(<any>viewModule)[0];
-    //alert(typeof vmClass + " " + typeof viewComp);
-    if (typeof vmClass === "function" && (typeof viewComp === "object" || typeof viewComp === "function")) {
-      registry.set(vmClass, viewComp as React.ComponentType<{ viewModel: any }>);
+// ❸  Build <VM-ctor → ViewMap>
+Object.entries(viewModelModules).forEach(([vmPath, vmModule]) => {
+  const vmCtor = getExport(vmModule);
+  const baseName = vmPath
+    .split("/")
+    .pop()!
+    .replace(/ViewModel\.ts$/, "");
+
+  const viewMap: ViewMap = new Map();
+  // iterate over *all* view files once; pick those whose base matches
+  Object.entries(viewModules).forEach(([viewPath, viewModule]) => {
+    const { base, context } = parseViewPath(viewPath);
+    if (base === baseName) {
+      const viewComp = getExport(viewModule);
+      viewMap.set(context, viewComp);
     }
+  });
+
+  // Only register VMs that have at least one view
+  if (viewMap.size > 0 && typeof vmCtor === "function") {
+    registry.set(vmCtor, viewMap);
   }
 });
 
