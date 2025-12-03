@@ -11,19 +11,15 @@ export class CounterViewModel {
     makeAutoObservable(this);
   }
 
-  get value() {
-    return this.model.value;
-  }
-
   increment() {
-    this.model.value++;
+    this.model.increment();
   }
 
   decrement() {
-    this.model.value--;
+    this.model.decrement();
   }
 
   reset() {
-    this.model.value = 0;
+    this.model.reset();
   }
 }

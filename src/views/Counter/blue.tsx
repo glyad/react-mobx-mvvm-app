@@ -8,7 +8,7 @@ interface Props {
 
 export const CounterView: React.FC<Props> = observer(({ viewModel }) => 
     <div>
-      <h1 style={{ color: "blue" }} data-testid="counter-value">Counter: {viewModel.value}</h1>
+      <h1 style={{ color: "blue" }} data-testid="counter-value">Counter: {viewModel.model.value}</h1>
       <ErrorMessages property="value" viewModel={viewModel} />
       <br></br>
       <button onClick={() => viewModel.increment()}>Increment</button>
