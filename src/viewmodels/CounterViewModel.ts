@@ -1,10 +1,8 @@
-import { action, autorun, computed, IObjectDidChange, makeAutoObservable, makeObservable, observable, observe } from "mobx";
+import { makeAutoObservable } from "mobx";
 import { CounterModel } from "../models/CounterModel";
-import { validateOrReject, ValidationError } from "class-validator";
 
 export class CounterViewModel {
   model: CounterModel;
-  errors: ValidationError[] = [];
 
   constructor(model: CounterModel) {
     this.model = model;
