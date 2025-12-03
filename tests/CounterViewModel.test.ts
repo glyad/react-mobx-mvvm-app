@@ -9,22 +9,22 @@ describe("CounterViewModel", () => {
   });
 
   it("starts at zero", () => {
-    expect(vm.value).toBe(0);
+    expect(vm.model.value).toBe(0);
   });
 
   it("increments", () => {
     vm.increment();
-    expect(vm.value).toBe(1);
+    expect(vm.model.value).toBe(1);
   });
 
   it("decrements", () => {
     vm.decrement();
-    expect(vm.value).toBe(-1);
+    expect(vm.model.value).toBe(-1);
   });
 
   it("resets", () => {
     vm.increment();
     vm.reset();
-    expect(vm.value).toBe(0);
+    expect(vm.model.value).toBe(0);
   });
 });
